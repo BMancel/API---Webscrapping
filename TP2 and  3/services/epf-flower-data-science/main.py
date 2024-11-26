@@ -1,5 +1,4 @@
 import uvicorn
-
 from src.app import get_application
 
 app = get_application()
