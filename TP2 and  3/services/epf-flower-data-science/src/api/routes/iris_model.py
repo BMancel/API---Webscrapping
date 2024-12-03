@@ -77,7 +77,6 @@ def predict_iris_model(data: IrisFeatures):
         
         features_array = np.array(data.features).reshape(1, -1)
         
-        from sklearn.preprocessing import StandardScaler
         scaler = StandardScaler()
         features_scaled = scaler.fit_transform(X_scaled)
         features_scaled = scaler.transform(features_array)
