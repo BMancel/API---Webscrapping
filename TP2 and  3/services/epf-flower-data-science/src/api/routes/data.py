@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
+import json
 import os
 
 router = APIRouter()
@@ -37,13 +38,32 @@ def split_data(X, y, test_size=0.2, random_state=42):
 
 
 # Endpoint pour charger les données
-@router.get("/load-iris-data", response_model=MessageResponse)
+@router.get("/load-iris-data", response_model=MessageResponse, responses={
+    200: {"description": "Iris dataset loaded successfully", "model": MessageResponse},
+    404: {"description": "Iris dataset file not found", "model": MessageResponse},
+    500: {"description": "Internal server error", "model": MessageResponse}
+})
 def load_iris_data():
     try:
         df = load_iris_data_as_dataframe()
+        # Return a success message with the data as a dictionary
         return JSONResponse(content={"message": "Iris dataset loaded successfully", "data": df.to_dict(orient="records")})
+
+    except FileNotFoundError:
+        # If the Iris data file is not found
+        raise HTTPException(status_code=404, detail="Iris dataset file not found")
+
+    except ValueError as ve:
+        # If the data is malformed or corrupted
+        raise HTTPException(status_code=400, detail=f"Value error while loading the data: {str(ve)}")
+
+    except json.JSONDecodeError:
+        # If the JSON file is improperly formatted
+        raise HTTPException(status_code=400, detail="Error decoding JSON data")
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # For any other unspecified errors
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Endpoint pour prétraiter les données
 @router.get("/process-iris-data", response_model=MessageResponse)
