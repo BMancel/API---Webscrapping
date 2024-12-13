@@ -16,5 +16,5 @@ router.include_router(data.router, tags=["data-iris"])
 router.include_router(iris_model.router, tags=["model"])
 router.include_router(parameters.router, tags=["firestore-parameters"])
 
-router.include_router(public_router, prefix="/api", tags=["Public Authentication"])
-router.include_router(private_router, prefix="/api", tags=["Private Authentication"])
+router.include_router(public_router, tags=["Public Authentication"])
+router.include_router(private_router, tags=["Private Authentication"])

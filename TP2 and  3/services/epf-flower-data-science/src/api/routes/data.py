@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from sklearn.model_selection import train_test_split
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 import os
 
 router = APIRouter()
@@ -230,7 +231,9 @@ def process_iris_data():
     """
     try:
         df = load_iris_data_as_dataframe()
-        X_scaled, y = preprocess_iris_data(df)
+        X, y = preprocess_iris_data(df)
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
         return JSONResponse(
             status_code=200,
             content={
@@ -333,7 +336,9 @@ def split_iris_data(test_size: float = 0.2, random_state: int = 42):
             raise ValueError("test_size must be between 0 and 1")
             
         df = load_iris_data_as_dataframe()
-        X_scaled, y = preprocess_iris_data(df)
+        X, y = preprocess_iris_data(df)
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
         X_train, X_test, y_train, y_test = split_data(X_scaled, y, test_size, random_state)
         
         return JSONResponse(
