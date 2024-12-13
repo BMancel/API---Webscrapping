@@ -8,28 +8,74 @@ import os
 api_key_header = APIKeyHeader(name="Authorization", auto_error=True)
 
 class HTTPValidationError(BaseModel):
+    """
+    Represents the structure of validation error responses.
+
+    Attributes:
+        detail (str): A message detailing the validation error.
+    """
     detail: str
 
 class UserCreate(BaseModel):
+    """
+    Schema for creating a user with email and password.
+
+    Attributes:
+        email (str): The user's email address.
+        password (str): The user's password.
+    """
     email: str
     password: str
 
 class AdminRequest(BaseModel):
+    """
+    Schema for making a user an admin.
+
+    Attributes:
+        uid (str): The unique identifier of the user to promote to admin.
+    """
     uid: str
 
 class UserResponse(BaseModel):
+    """
+    Response model for user registration with user details.
+
+    Attributes:
+        message (str): A message describing the result of the registration.
+        uid (str): The unique identifier of the created user.
+        is_admin (bool): Whether the user has admin privileges.
+    """
     message: str
     uid: str
     is_admin: bool = False
 
 class TokenResponse(BaseModel):
+    """
+    Response model for login containing the authentication token.
+
+    Attributes:
+        token (str): The authentication token.
+        uid (str): The unique identifier of the logged-in user.
+    """
     token: str
     uid: str
 
 class MessageResponse(BaseModel):
+    """
+    Generic message response model.
+
+    Attributes:
+        message (str): A descriptive message.
+    """
     message: str
 
 class UserList(BaseModel):
+    """
+    Response model containing a list of user details.
+
+    Attributes:
+        users (List[dict]): A list of user information including UID, email, and admin status.
+    """
     users: list[dict]
 
 # Initialize Firebase Admin SDK
@@ -43,6 +89,18 @@ except ValueError:
 
 # Middleware for admin access
 async def admin_required(authorization: str = Security(api_key_header)) -> auth.UserRecord:
+    """
+    Middleware for verifying admin privileges in requests.
+
+    Args:
+        authorization (str): The authorization header containing the Bearer token.
+
+    Returns:
+        auth.UserRecord: The user record of the authenticated admin.
+
+    Raises:
+        HTTPException: If the user is unauthorized or lacks admin privileges.
+    """
     if not authorization or not authorization.startswith('Bearer '):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,6 +136,17 @@ public_router = APIRouter(
 
 @public_router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user: UserCreate):
+    """
+    Register a new user.
+
+    If this is the first user, admin privileges are assigned.
+
+    Args:
+        user (UserCreate): The user creation request.
+
+    Returns:
+        UserResponse: Details of the created user.
+    """
     try:
         firebase_user = auth.create_user(
             email=user.email,
@@ -121,6 +190,15 @@ async def register(user: UserCreate):
 
 @public_router.post("/login", response_model=TokenResponse)
 async def login(user: UserCreate):
+    """
+    Log in a user and generate an authentication token.
+
+    Args:
+        user (UserCreate): The login request containing email and password.
+
+    Returns:
+        TokenResponse: The authentication token and user UID.
+    """
     try:
         firebase_user = auth.get_user_by_email(user.email)
         custom_token = auth.create_custom_token(firebase_user.uid)
@@ -155,6 +233,17 @@ private_router = APIRouter(
     description="Requires admin privileges. Token must be provided in Authorization header."
 )
 async def list_users(current_user: auth.UserRecord = Depends(admin_required)):
+    """
+    List all registered users.
+
+    Admin privileges are required to access this endpoint.
+
+    Args:
+        current_user (auth.UserRecord): The authenticated admin user.
+
+    Returns:
+        UserList: A list of all registered users.
+    """
     try:
         page = auth.list_users()
         users = []
@@ -183,6 +272,18 @@ async def list_users(current_user: auth.UserRecord = Depends(admin_required)):
     description="Requires admin privileges. Token must be provided in Authorization header."
 )
 async def make_admin(request: AdminRequest, current_user: auth.UserRecord = Depends(admin_required)):
+    """
+    Assign admin privileges to a user.
+
+    Admin privileges are required to access this endpoint.
+
+    Args:
+        request (AdminRequest): The request containing the UID of the user to promote.
+        current_user (auth.UserRecord): The authenticated admin user.
+
+    Returns:
+        MessageResponse: A message indicating the success of the operation.
+    """
     try:
         auth.set_custom_user_claims(request.uid, {'admin': True})
         return MessageResponse(message=f'User {request.uid} is now an admin')
