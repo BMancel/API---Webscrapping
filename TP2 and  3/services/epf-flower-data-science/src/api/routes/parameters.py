@@ -148,7 +148,7 @@ def add_parameters(request: ParametersRequest):
             return JSONResponse(content={"message": "Parameters merged successfully", "parameters": merged_parameters})
         else:
             parameters_ref.set(request.new_parameters)
-            return JSONResponse(content={"message": "New parameters document created successfully", "parameters": new_parameters})
+            return JSONResponse(content={"message": "New parameters document created successfully", "parameters": request.new_parameters})
     
     except exceptions.GoogleCloudError as e:
         raise HTTPException(status_code=500, detail=f"Firestore error: {str(e)}")
